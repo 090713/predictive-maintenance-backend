@@ -1,0 +1,10 @@
+{
+  "threshold": 0.27904037338435955,
+  "selected_candidate": "random_forest",
+  "method": "Minimize validation 5*FN + 1*FP subject to recall >= 0.80; tie-break by F1, average precision, then Brier score. Hyperparameter grids chosen using training CV AP. Costs are unapproved pilot assumptions.",
+  "false_negative_cost": 5.0,
+  "false_positive_cost": 1.0,
+  "minimum_validation_recall": 0.8,
+  "selection_data": "validation only",
+  "selected_at_utc": "2026-09-09T10:23:10.421644+00:00"
+}

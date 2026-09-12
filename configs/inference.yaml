@@ -1,0 +1,6 @@
+max_batch_rows: 1000
+max_upload_bytes: 2000000
+out_of_distribution_iqr_multiplier: 3.0
+explanation_top_k: 6
+api_title: Manufacturing Maintenance Pilot
+api_version: 1.0.0

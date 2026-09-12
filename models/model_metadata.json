@@ -1,0 +1,158 @@
+{
+  "model_version": "ai4i-pilot-1.0.0-2026-09-09",
+  "created_at_utc": "2026-09-09T10:23:33.986879+00:00",
+  "selected_model": "random_forest",
+  "estimator_class": "Pipeline",
+  "prediction_target": "Machine failure under supplied operating condition",
+  "prediction_horizon": null,
+  "remaining_useful_life": false,
+  "factory_approved": false,
+  "dataset": {
+    "name": "AI4I 2020 Predictive Maintenance Dataset",
+    "owner": "Stephan Matzka; distributed by UCI Machine Learning Repository",
+    "official_page": "https://archive.ics.uci.edu/dataset/601/ai4i+2020+predictive+maintenance+dataset",
+    "direct_url": "https://archive.ics.uci.edu/static/public/601/ai4i+2020+predictive+maintenance+dataset.zip",
+    "doi": "10.24432/C5HS5C",
+    "downloaded_at_utc": "2026-09-09T10:08:25.462358+00:00",
+    "version": "2020 UCI release; exact bytes identified by SHA-256",
+    "license": "CC BY 4.0",
+    "license_url": "https://creativecommons.org/licenses/by/4.0/",
+    "intended_use": "Synthetic milling operating-condition binary/multilabel classification and novelty detection; no forecast horizon or RUL",
+    "files": [
+      {
+        "local_filename": "data\\raw\\ai4i2020_uci_original.zip",
+        "sha256": "f601f14294bcf190f9d720676b7f0aea46a26cde9ab8ebc7b4f8174d9d26b252",
+        "bytes": 522170
+      },
+      {
+        "local_filename": "data\\raw\\ai4i2020.csv",
+        "sha256": "dc6630cd9b1f0f853922fad78a1b6436570d3f1ec863f1dd5c4340ac56bc8a8e",
+        "bytes": 522048
+      }
+    ]
+  },
+  "features": [
+    "product_type",
+    "air_temperature",
+    "process_temperature",
+    "rotational_speed",
+    "torque",
+    "tool_wear"
+  ],
+  "derived_features": [
+    "temperature_difference",
+    "mechanical_power_w",
+    "overstrain_measure"
+  ],
+  "transformed_features": [
+    "product_type_L",
+    "product_type_M",
+    "product_type_H",
+    "air_temperature",
+    "process_temperature",
+    "rotational_speed",
+    "torque",
+    "tool_wear",
+    "temperature_difference",
+    "mechanical_power_w",
+    "overstrain_measure"
+  ],
+  "training_config": {
+    "seed": 42,
+    "test_fraction": 0.2,
+    "validation_fraction": 0.2,
+    "cv_folds": 5,
+    "n_jobs": 2,
+    "false_negative_cost": 5.0,
+    "false_positive_cost": 1.0,
+    "minimum_validation_recall": 0.8,
+    "anomaly_contamination": 0.02,
+    "min_mode_train_positives": 50,
+    "permutation_repeats": 8,
+    "calibration": "sigmoid"
+  },
+  "split_sizes": {
+    "train": 6000,
+    "validation": 2000,
+    "test": 2000
+  },
+  "seed": 42,
+  "selection_method": "Minimize validation 5*FN + 1*FP subject to recall >= 0.80; tie-break by F1, average precision, then Brier score. Hyperparameter grids chosen using training CV AP. Costs are unapproved pilot assumptions.",
+  "selected_candidate_result": {
+    "candidate": "random_forest",
+    "cv_pr_auc_mean": 0.9001966756506674,
+    "cv_pr_auc_std": 0.04780300922845548,
+    "cv_roc_auc_mean": 0.9705290093581442,
+    "cv_roc_auc_std": 0.019912475401789073,
+    "cv_recall_mean": 0.8325609756097562,
+    "cv_recall_std": 0.0401967573074854,
+    "cv_precision_mean": 0.9497818074598261,
+    "cv_precision_std": 0.03645951150095128,
+    "cv_f1_mean": 0.8870403857745629,
+    "cv_f1_std": 0.0346974511727151,
+    "cv_balanced_accuracy_mean": 0.9155041794534455,
+    "cv_balanced_accuracy_std": 0.02041856580610736,
+    "cv_neg_brier_score_mean": -0.007866520414125366,
+    "cv_neg_brier_score_std": 0.001967395110095886,
+    "validation_n": 2000,
+    "validation_positive_support": 68,
+    "validation_threshold": 0.27904037338435955,
+    "validation_accuracy": 0.9855,
+    "validation_balanced_accuracy": 0.9002709779564,
+    "validation_precision": 0.7746478873239436,
+    "validation_recall": 0.8088235294117647,
+    "validation_specificity": 0.9917184265010351,
+    "validation_f1": 0.7913669064748201,
+    "validation_roc_auc": 0.9790220436000487,
+    "validation_pr_auc": 0.8606430087570897,
+    "validation_pr_auc_definition": "average precision (non-interpolated)",
+    "validation_pr_auc_trapezoidal": 0.8609293906111259,
+    "validation_brier_score": 0.01024296147568197,
+    "validation_cost": 81.0,
+    "selected_threshold": 0.27904037338435955,
+    "fit_seconds": 11.921945600304753
+  },
+  "python_version": "3.12.14",
+  "dependencies": {
+    "numpy": "2.2.6",
+    "pandas": "2.3.3",
+    "scikit-learn": "1.7.2",
+    "joblib": "1.5.2",
+    "scipy": "1.15.3",
+    "fastapi": "0.116.1",
+    "pydantic": "2.11.9"
+  },
+  "calibration": "uncalibrated; calibrated candidates compared on validation",
+  "fit_data": "6000 training rows only. Validation used for selection, never final refit. Test accessed after freeze.",
+  "mode_training_support": {
+    "TWF": 21,
+    "HDF": 70,
+    "PWF": 58,
+    "OSF": 62,
+    "RNF": 10
+  },
+  "mode_models": [
+    "HDF",
+    "PWF",
+    "OSF"
+  ],
+  "test_evaluation_completed_at_utc": "2026-09-09T10:23:34.007836+00:00",
+  "reproduction_of_disclosed_test": false,
+  "training_duration_seconds": 127.59048950020224,
+  "limitations": [
+    "Synthetic milling conditions; no real factory validation.",
+    "No reliable machine identity, timestamped run-to-failure sequence or defined prediction horizon.",
+    "Generation formulas create separable labels and can inflate apparent performance.",
+    "Random-walk temperatures and wear cycles create dependencies; random splits may be optimistic for deployment.",
+    "RNF counts and mode-union labels in CSV can differ from narrative documentation; empirical labels remain unchanged.",
+    "Rare mode metrics have high sampling uncertainty."
+  ],
+  "anomaly": {
+    "normal_training_count": 5797,
+    "contamination": 0.02,
+    "test_anomaly_rate": 0.022,
+    "failure_recall_as_novelty_flag": 0.16176470588235295,
+    "normal_false_alert_rate": 0.017080745341614908,
+    "score_meaning": "Raw score is negative IsolationForest.score_samples (higher = more unusual). Display score is empirical percentile among normal training scores, not a failure probability. is_anomaly uses fitted contamination threshold."
+  }
+}

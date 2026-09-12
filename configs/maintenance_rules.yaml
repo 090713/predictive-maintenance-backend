@@ -1,0 +1,16 @@
+# Pilot operating assumptions, not factory-approved thresholds.
+risk:
+  warning_probability: 0.10
+  high_probability: 0.40
+  critical_probability: 0.80
+  anomaly_warning_percentile: 0.98
+  mode_attention_score: 0.50
+actions:
+  TWF: Inspect or replace the tool.
+  HDF: Inspect cooling and heat-dissipation conditions.
+  PWF: Inspect machine load, power delivery, and drive system.
+  OSF: Inspect tool condition and excessive mechanical load.
+  RNF: Perform a broader inspection; no specific sensor cause can be inferred.
+default_action: Continue routine observation and planned inspections.
+generic_inspection: Request a maintenance review of the operating condition and sensor readings.
+notice: Decision support only. Factory-specific calibration and human approval are required before operational maintenance actions. This score describes the supplied operating condition and has no future time horizon.

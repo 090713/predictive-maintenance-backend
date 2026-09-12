@@ -1,0 +1,13 @@
+{
+  "hash_algorithm": "sha256",
+  "files": {
+    "model_pipeline.joblib": "1b1610fa1d042df84c7ba853b1febdf33467d117e6a10728a34da7b9a9143742",
+    "failure_mode_pipeline.joblib": "3b242c73ad19c5ddffc7f6edf2a50eefa2936ea2330b1e62a82f9882dc322132",
+    "anomaly_model.joblib": "9e8d706f8a248b245d0f6289f1aa2943350937ecfac0a8c95cf947dfbf7ee932",
+    "threshold.json": "15c455138c6eb38347a7fb06b894243913633fa3d5030ac0322c6a3923e185bb",
+    "model_metadata.json": "9deba066c2419b1684c24da979d935a94dbabcb91a3a83eea73a72120fe24170",
+    "training_profile.json": "36a89b01c6addc74c57b7faa5ef66469f51042d21f0be5e820f9fc52d3da1c42",
+    "explanation_baseline.json": "d23d6c14c309b8e3d4a64f0f80a1078e91275d6f84bc3f30d6bc4839b65a0cec"
+  },
+  "trust_notice": "Integrity checks detect accidental changes; use signed artifacts and trusted deployment storage against malicious replacement. Never load untrusted joblib files."
+}
