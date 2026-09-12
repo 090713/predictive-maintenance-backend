@@ -15,7 +15,7 @@
 
 from typing import Dict, List, Optional, Literal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict, Field, AliasChoices
 
 
 # ---------------------------------------------------------
@@ -24,27 +24,71 @@ from pydantic import BaseModel
 # These are the 6 raw values expected from the frontend.
 #
 # The ML teammate's model expects exactly these fields.
+#
+# Aliases: the frontend uses camelCase names in its
+# AssessInput object. Each field accepts BOTH the backend's
+# snake_case name and the frontend's camelCase name so the
+# SPA can POST its input object as-is.
 # ---------------------------------------------------------
 
 class MachineInput(BaseModel):
 
+    # Accept both snake_case and camelCase spellings.
+    model_config = ConfigDict(populate_by_name=True)
+
     # Product type of the machine: Low, Medium, or High
-    product_type: Literal["L", "M", "H"]
+    product_type: Literal["L", "M", "H"] = Field(
+        validation_alias=AliasChoices("product_type", "productType")
+    )
 
     # Air temperature in Kelvin
-    air_temperature: float
+    air_temperature: float = Field(
+        validation_alias=AliasChoices("air_temperature", "airTemp")
+    )
 
     # Process temperature in Kelvin
-    process_temperature: float
+    process_temperature: float = Field(
+        validation_alias=AliasChoices(
+            "process_temperature",
+            "processTemp"
+        )
+    )
 
     # Machine rotational speed in RPM
-    rotational_speed: float
+    rotational_speed: float = Field(
+        validation_alias=AliasChoices(
+            "rotational_speed",
+            "speed"
+        )
+    )
 
     # Machine torque in Newton-metres
-    torque: float
+    torque: float = Field(
+        validation_alias=AliasChoices("torque", "torque")
+    )
 
     # Tool wear in minutes
-    tool_wear: float
+    tool_wear: float = Field(
+        validation_alias=AliasChoices("tool_wear", "toolWear")
+    )
+
+    # ---------------------------------------------------------
+    # Frontend identity fields.
+    #
+    # IMPORTANT: these are accepted-and-ignored. They are NOT
+    # passed to the ML pipeline. The trained FeatureBuilder
+    # allowlist rejects any predictor column outside the six
+    # model features, so these can never leak into the model.
+    # ---------------------------------------------------------
+
+    # Machine identifier (records which machine was assessed)
+    machine_id: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("machine_id", "machineId")
+    )
+
+    # Operating state of the machine
+    state: Optional[Literal["RUNNING", "IDLE"]] = Field(default=None)
 
 
 # ---------------------------------------------------------
@@ -107,6 +151,10 @@ class ContributingFeature(BaseModel):
     # is moved to its training median
     magnitude: float
 
+    # Signed indicator for the frontend parser:
+    # +1 = current value raises risk, -1 = lowers risk
+    sign: Literal[1, -1]
+
     # Whether the current value increases or decreases risk
     direction: Literal["increases", "decreases"]
 
@@ -135,8 +183,8 @@ class PredictionResponse(BaseModel):
 
     # Position of the anomaly score compared with
     # the training/reference distribution.
-    # IMPORTANT: returned as a fraction 0.0 - 1.0.
-    # Multiply by 100 if your UI expects a 0 - 100 scale.
+    # Scale 0.0 - 100.0 (percentile rank against
+    # training normal scores)
     anomaly_percentile: float
 
     # Whether the machine is considered anomalous

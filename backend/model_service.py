@@ -316,6 +316,7 @@ def _compute_contributing_features(input_data: pd.DataFrame) -> list:
             "label": label,
             "value": float(input_data.iloc[0][feature]),
             "magnitude": round(abs(delta), 6),
+            "sign": 1 if delta >= 0 else -1,
             "direction": "increases" if delta >= 0 else "decreases",
             "method": "leave_one_out_replacement_with_training_baseline",
         })
@@ -399,8 +400,9 @@ def predict_machine(
 
     anomaly_score = float(raw_score[0])
 
-    # Kept as a 0.0 - 1.0 fraction. Multiply by 100 for 0-100.
-    anomaly_percentile = float(percentile[0])
+    # Reported as a 0.0 - 100.0 percentile rank to match the
+    # frontend contract (0-100 scale).
+    anomaly_percentile = float(percentile[0]) * 100.0
 
     is_anomalous = bool(is_anomaly[0])
 
