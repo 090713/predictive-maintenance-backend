@@ -32,6 +32,7 @@ if not exist ".env" (
 )
 
 REM Run
-echo Starting server on http://localhost:8000
-echo API docs: http://localhost:8000/docs
-uvicorn backend.main:app --reload --port 8000
+set PORT=%PORT:8000%
+echo Starting server on http://localhost:%PORT%
+echo API docs: http://localhost:%PORT%/docs
+uvicorn backend.main:app --reload --port %PORT%
