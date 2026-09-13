@@ -1,0 +1,31 @@
+# Core dependencies
+fastapi==0.135.3
+uvicorn[standard]==0.44.0
+pydantic==2.13.0
+pydantic-settings==2.14.2
+python-dotenv==1.0.0
+
+# Database
+motor==3.7.1
+pymongo==4.18.1
+
+# Authentication
+python-jose[cryptography]==3.5.0
+passlib[bcrypt]==1.7.4
+python-multipart==0.0.32
+
+# HTTP client
+httpx==0.28.1
+
+# Reports
+openpyxl==3.1.5
+pandas==2.3.3
+
+# ML (existing)
+joblib==1.5.3
+scikit-learn==1.7.2
+numpy==2.2.6
+scipy==1.15.3
+
+# Config
+pyyaml==6.0.3
