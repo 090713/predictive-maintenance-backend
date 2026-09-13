@@ -3,7 +3,7 @@
 
 set -e
 
-echo "=== Fathom Backend Startup ==="
+echo "=== Predictive Maintenance Backend ==="
 
 # Check Python
 if ! command -v python3 &> /dev/null; then
@@ -28,11 +28,12 @@ pip install -q -r requirements.txt
 if [ ! -f ".env" ]; then
     echo "Warning: .env not found, copying from .env.example"
     cp .env.example .env
-    echo "Please edit .env with your MongoDB URI and JWT secret"
+    echo "Please edit .env with your MongoDB URI"
     exit 1
 fi
 
 # Run
-echo "Starting server on http://localhost:8000"
-echo "API docs: http://localhost:8000/docs"
-uvicorn backend.main:app --reload --port 8000
+PORT=${PORT:-8000}
+echo "Starting server on http://localhost:$PORT"
+echo "API docs: http://localhost:$PORT/docs"
+uvicorn backend.main:app --host 0.0.0.0 --port $PORT
