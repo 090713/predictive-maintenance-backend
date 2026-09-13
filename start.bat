@@ -27,7 +27,7 @@ REM Check .env
 if not exist ".env" (
     echo Warning: .env not found, copying from .env.example
     copy .env.example .env
-    echo Please edit .env with your MongoDB URI and JWT secret
+    echo Please edit .env with your MongoDB URI
     exit /b 1
 )
 
