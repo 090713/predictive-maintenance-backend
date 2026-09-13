@@ -5,7 +5,13 @@ from fastapi import APIRouter, HTTPException, Query
 from typing import Optional
 from bson import ObjectId
 
-from backend.models.alert import AlertResponse, AlertListResponse, AlertListQuery, AlertSeverity
+from backend.models.alert import (
+    AlertResponse,
+    AlertListResponse,
+    AlertListQuery,
+    AlertSeverity,
+    AlertInDB,
+)
 from backend.db.mongodb import get_collection
 
 
@@ -38,7 +44,8 @@ async def list_alerts(query: AlertListQuery = Query()):
     items = []
     async for doc in cursor:
         doc["_id"] = str(doc["_id"])
-        items.append(AlertResponse.from_db(doc))
+        alert = AlertInDB(**doc)
+        items.append(AlertResponse.from_db(alert))
 
     return AlertListResponse(
         items=items,
@@ -57,4 +64,5 @@ async def get_alert(alert_id: str):
         raise HTTPException(status_code=404, detail="Alert not found")
 
     doc["_id"] = str(doc["_id"])
-    return AlertResponse.from_db(doc)
+    alert = AlertInDB(**doc)
+    return AlertResponse.from_db(alert)
