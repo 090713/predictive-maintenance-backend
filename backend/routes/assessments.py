@@ -1,18 +1,18 @@
 """
-Assessment routes - prediction history and listing.
+Assessment routes - prediction history and listing (public, no auth).
 """
 from datetime import datetime, timezone
-from typing import Optional, List, Dict, Any
-from fastapi import APIRouter, Depends, HTTPException, status, Query, Body
-from pymongo import ASCENDING, DESCENDING
+from typing import Optional
+from fastapi import APIRouter, Depends, HTTPException, Query
 from bson import ObjectId
 
 from backend.config import settings
-from backend.models.assessment import AssessmentCreate, AssessmentResponse, AssessmentDetailResponse, AssessmentListQuery, AssessmentListResponse
-from backend.models.user import UserResponse, UserRole
+from backend.models.assessment import (
+    AssessmentCreate, AssessmentResponse, AssessmentDetailResponse,
+    AssessmentListQuery, AssessmentListResponse,
+)
 from backend.schemas import MachineInput, PredictionResponse
 from backend.model_service import predict_machine
-from backend.services.auth import get_current_user, get_current_user_response, require_admin
 from backend.db.mongodb import get_collection
 import httpx
 
@@ -27,7 +27,6 @@ async def call_gradio_fallback(machine_input: MachineInput) -> Optional[Predicti
     """Call Gradio API as fallback."""
     try:
         async with httpx.AsyncClient(timeout=60.0) as client:
-            # POST to start prediction
             post_resp = await client.post(
                 f"{GRADIO_API_URL}/call/assess",
                 json={
@@ -48,7 +47,6 @@ async def call_gradio_fallback(machine_input: MachineInput) -> Optional[Predicti
             if not event_id:
                 return None
 
-            # Stream results
             async with client.stream(
                 "GET",
                 f"{GRADIO_API_URL}/call/assess/{event_id}",
@@ -62,7 +60,6 @@ async def call_gradio_fallback(machine_input: MachineInput) -> Optional[Predicti
                         import json
                         data = json.loads(line[6:])
                         if isinstance(data, list) and data:
-                            # Parse Gradio output format
                             return parse_gradio_output(data)
     except Exception:
         pass
@@ -71,10 +68,8 @@ async def call_gradio_fallback(machine_input: MachineInput) -> Optional[Predicti
 
 def parse_gradio_output(outputs: list) -> PredictionResponse:
     """Parse Gradio outputs into PredictionResponse."""
-    # Last element contains full JSON
     full = outputs[-1] if isinstance(outputs[-1], dict) else {}
 
-    # Extract key fields
     failure_prob = full.get("failure_probability", 0)
     if isinstance(failure_prob, str) and failure_prob.endswith("%"):
         failure_prob = float(failure_prob.rstrip("%")) / 100
@@ -109,36 +104,19 @@ def parse_gradio_output(outputs: list) -> PredictionResponse:
 
 async def call_simulated_fallback(machine_input: MachineInput) -> PredictionResponse:
     """Use the deterministic simulated engine as final fallback."""
-    # Import the simulated engine logic
     from backend.services.fallback import simulate_assessment
     return simulate_assessment(machine_input)
 
 
 @router.post("/predict", response_model=PredictionResponse)
-async def predict(
-    machine: MachineInput,
-    current_user: UserResponse = Depends(get_current_user_response)
-):
+async def predict(machine: MachineInput):
     """
-    Primary prediction endpoint.
-    Tries FastAPI model → Gradio fallback → Simulated fallback.
+    Primary prediction endpoint (public).
+    Tries FastAPI model -> Gradio fallback -> Simulated fallback.
     Persists assessment to MongoDB.
     """
     from backend.services.assessment import create_assessment
     from backend.services.alert import create_alert_from_assessment
-
-    # Validate machine exists and user has access
-    machines_collection = get_collection("machines")
-    machine_doc = await get_collection("machines").find_one({"machine_id": machine.machine_id})
-    if not machine_doc:
-        raise HTTPException(status_code=404, detail="Machine not found")
-
-    # Check access
-    if current_user.role == "worker":
-        if current_user.id not in machine_doc.get("assigned_worker_ids", []):
-            raise HTTPException(status_code=403, detail="Not authorized for this machine")
-
-    mission_id = machine_doc.get("mission_id")
 
     # Try primary FastAPI model
     try:
@@ -153,8 +131,9 @@ async def predict(
         result["source"] = "fastapi"
     except Exception:
         # Try Gradio fallback
-        result = await call_gradio_fallback(machine)
-        if result:
+        gradio_result = await call_gradio_fallback(machine)
+        if gradio_result:
+            result = gradio_result
             result.source = "gradio"
         else:
             # Final simulated fallback
@@ -164,8 +143,6 @@ async def predict(
     # Create assessment record
     assessment = AssessmentCreate(
         machine_id=machine.machine_id,
-        mission_id=mission_id,
-        user_id=current_user.id,
         inputs=machine.model_dump(exclude_none=True),
         prediction=PredictionResponse(**result),
         source=result.get("source", "fastapi"),
@@ -174,8 +151,7 @@ async def predict(
     assessment_doc = await create_assessment(assessment)
 
     # Auto-create alert if high risk
-    pred = result
-    health_status = pred.get("health_status", "")
+    health_status = result.get("health_status", "")
     if health_status in ("High Risk", "Critical"):
         await create_alert_from_assessment(assessment_doc)
 
@@ -183,42 +159,30 @@ async def predict(
 
 
 @router.get("", response_model=AssessmentListResponse)
-async def list_assessments(
-    query: AssessmentListQuery = Depends(),
-    current_user: UserResponse = Depends(get_current_user_response)
-):
-    """List assessments with filters and pagination."""
+async def list_assessments(query: AssessmentListQuery = Depends()):
+    """List assessments with filters and pagination (public)."""
     assessments_collection = get_collection("assessments")
 
-    # Build query based on role
-    query = {}
-    if current_user.role == "worker":
-        query["user_id"] = current_user.id
-
-    if query.mission_id:
-        query["mission_id"] = query.mission_id
+    # Build query
+    q = {}
     if query.machine_id:
-        query["machine_id"] = query.machine_id
-    if query.user_id and current_user.role in ("admin", "supervisor"):
-        query["user_id"] = query.user_id
+        q["machine_id"] = query.machine_id
     if query.health_status:
-        query["prediction.health_status"] = query.health_status
+        q["prediction.health_status"] = query.health_status
     if query.risk_level:
-        query["prediction.risk_level"] = query.risk_level
+        q["prediction.risk_level"] = query.risk_level
     if query.date_from or query.date_to:
-        date_query = {}
+        date_q = {}
         if query.date_from:
-            date_query["$gte"] = query.date_from
+            date_q["$gte"] = query.date_from
         if query.date_to:
-            date_query["$lte"] = query.date_to
-        query["ts"] = date_query
+            date_q["$lte"] = query.date_to
+        q["ts"] = date_q
 
-    # Get total count
-    total = await get_collection("assessments").count_documents(query)
+    total = await assessments_collection.count_documents(q)
     total_pages = (total + query.page_size - 1) // query.page_size
 
-    # Get assessments
-    cursor = get_collection("assessments").find(query).sort("ts", -1).skip((query.page - 1) * query.page_size).limit(query.page_size)
+    cursor = assessments_collection.find(q).sort("ts", -1).skip((query.page - 1) * query.page_size).limit(query.page_size)
 
     items = []
     async for doc in cursor:
@@ -235,38 +199,11 @@ async def list_assessments(
 
 
 @router.get("/{assessment_id}", response_model=AssessmentDetailResponse)
-async def get_assessment(
-    assessment_id: str,
-    current_user: UserResponse = Depends(get_current_user_response)
-):
-    """Get a single assessment by ID."""
+async def get_assessment(assessment_id: str):
+    """Get a single assessment by ID (public)."""
     doc = await get_collection("assessments").find_one({"_id": ObjectId(assessment_id)})
     if not doc:
         raise HTTPException(status_code=404, detail="Assessment not found")
 
-    # Check access
-    if current_user.role == "worker" and doc.get("user_id") != current_user.id:
-        raise HTTPException(status_code=403, detail="Access denied")
-
     doc["_id"] = str(doc["_id"])
     return AssessmentDetailResponse(**doc)
-
-
-@router.post("/bulk", response_model=dict)
-async def bulk_create_assessments(
-    assessments: List[AssessmentCreate],
-    current_user: UserResponse = Depends(require_admin)
-):
-    """Bulk insert assessments (admin only, for migration)."""
-    assessments_collection = get_collection("assessments")
-
-    docs = []
-    for a in assessments:
-        doc = a.model_dump()
-        doc["ts"] = datetime.now(timezone.utc)
-        docs.append(doc)
-
-    if docs:
-        await assessments_collection.insert_many(docs)
-
-    return {"inserted": len(docs)}

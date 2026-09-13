@@ -1,9 +1,8 @@
 """
-Alert service - auto-creation and management.
+Alert service - auto-creation from assessments.
 """
 from datetime import datetime, timezone
 from typing import Optional
-from bson import ObjectId
 
 from backend.models.alert import AlertCreate, AlertInDB, AlertStatus, AlertSeverity
 from backend.models.assessment import AssessmentInDB
@@ -39,7 +38,6 @@ async def create_alert_from_assessment(assessment: AssessmentInDB) -> Optional[A
     alert = AlertCreate(
         assessment_id=assessment.id,
         machine_id=assessment.machine_id,
-        mission_id=assessment.mission_id,
         severity=severity,
         failure_probability=pred.get("failure_probability", 0),
         risk_level=risk_level,

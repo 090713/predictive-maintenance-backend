@@ -34,21 +34,6 @@ class Settings(BaseSettings):
         description="MongoDB database name",
     )
 
-    # JWT Authentication
-    JWT_SECRET: str = Field(
-        default="your-super-secret-jwt-key-change-in-production-min-32-chars",
-        description="Secret key for signing JWT tokens (min 32 chars)",
-    )
-    JWT_ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = Field(
-        default=10080,  # 7 days
-        description="Access token expiration in minutes",
-    )
-    REFRESH_TOKEN_EXPIRE_DAYS: int = Field(
-        default=30,
-        description="Refresh token expiration in days",
-    )
-
     # CORS
     CORS_ORIGINS: str = Field(
         default="http://localhost:5173,http://127.0.0.1:5173,https://predictive-maintenance-agent-fronte.vercel.app",
@@ -66,15 +51,8 @@ class Settings(BaseSettings):
         description="Gradio API base URL for fallback predictions",
     )
 
-    # First Admin Bootstrap
-    BOOTSTRAP_ADMIN_EMAIL: Optional[str] = Field(
-        default=None,
-        description="Email for initial admin user (auto-created on first run)",
-    )
-    BOOTSTRAP_ADMIN_PASSWORD: Optional[str] = Field(
-        default=None,
-        description="Password for initial admin user",
-    )
+    # Server
+    PORT: int = Field(default=8000, description="Server port")
 
     # Rate Limiting (future use)
     RATE_LIMIT_REQUESTS: int = 100

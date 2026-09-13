@@ -9,17 +9,11 @@ python-dotenv==1.0.0
 motor==3.7.1
 pymongo==4.18.1
 
-# Authentication
-python-jose[cryptography]==3.5.0
-passlib[bcrypt]==1.7.4
-python-multipart==0.0.32
-
 # HTTP client
 httpx==0.28.1
 
-# Reports
-openpyxl==3.1.5
-pandas==2.3.3
+# Validation
+email-validator>=2.0.0
 
 # ML (existing)
 joblib==1.5.3

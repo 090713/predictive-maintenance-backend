@@ -1,7 +1,7 @@
 """
 FastAPI Backend
 ---------------
-Main entry point for the Predictive Maintenance backend.
+Main entry point for the Predictive Maintenance Agent.
 
 Responsibilities:
 1. Start the FastAPI application
@@ -10,7 +10,6 @@ Responsibilities:
 4. Validate the input
 5. Call the ML service
 6. Return the combined prediction to the frontend
-7. Manage authentication, missions, machines, assessments, alerts, reports
 """
 
 from contextlib import asynccontextmanager
@@ -19,7 +18,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from backend.config import settings
 from backend.db.mongodb import MongoDB, lifespan_mongodb
-from backend.routes import auth, missions, machines, assessments, alerts, reports, health
+from backend.routes import machines, assessments, alerts, health
 from backend.schemas import MachineInput, PredictionResponse
 from backend.model_service import predict_machine
 
@@ -46,7 +45,7 @@ app = FastAPI(
     title=settings.APP_NAME,
     description=(
         "Backend API for the manufacturing "
-        "predictive maintenance system"
+        "predictive maintenance agent"
     ),
     version=settings.APP_VERSION,
     lifespan=lifespan,
@@ -73,19 +72,12 @@ app.add_middleware(
 # Health & System
 app.include_router(health.router, tags=["Health"])
 
-# Authentication
-app.include_router(auth.router, tags=["Authentication"])
-
 # Core Resources
-app.include_router(missions.router, tags=["Missions"])
 app.include_router(machines.router, tags=["Machines"])
 
 # Predictions & Monitoring
 app.include_router(assessments.router, tags=["Assessments"])
 app.include_router(alerts.router, tags=["Alerts"])
-
-# Reports
-app.include_router(reports.router, tags=["Reports"])
 
 
 # =========================================================

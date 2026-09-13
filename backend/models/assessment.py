@@ -1,5 +1,5 @@
 """
-Assessment model - represents a prediction assessment for a machine.
+Assessment model - simplified for predictive maintenance agent.
 """
 from datetime import datetime
 from typing import Dict, List, Optional, Any, Literal
@@ -9,24 +9,21 @@ from bson import ObjectId
 from backend.schemas import PredictionResponse
 
 
-class AssessmentBase(BaseModel):
-    """Base assessment model matching prediction response + metadata."""
+class AssessmentCreate(BaseModel):
+    """Model for creating a new assessment."""
     machine_id: str
-    mission_id: str
-    user_id: str
     inputs: Dict[str, Any] = Field(description="Raw sensor inputs")
     prediction: PredictionResponse
     source: Literal["fastapi", "gradio", "simulated"] = "fastapi"
 
 
-class AssessmentCreate(AssessmentBase):
-    """Model for creating a new assessment."""
-    pass
-
-
-class AssessmentInDB(AssessmentBase):
+class AssessmentInDB(BaseModel):
     """Assessment model as stored in database."""
     id: str = Field(alias="_id")
+    machine_id: str
+    inputs: Dict[str, Any]
+    prediction: PredictionResponse
+    source: str = "fastapi"
     ts: datetime = Field(default_factory=datetime.utcnow)
 
     class Config:
@@ -38,11 +35,8 @@ class AssessmentResponse(BaseModel):
     """Assessment model for API responses."""
     id: str
     machine_id: str
-    mission_id: str
-    user_id: str
     ts: datetime
     source: str
-    # Key metrics for list views
     failure_probability: float
     health_status: str
     risk_level: str
@@ -56,8 +50,6 @@ class AssessmentResponse(BaseModel):
         return cls(
             id=assessment.id,
             machine_id=assessment.machine_id,
-            mission_id=assessment.mission_id,
-            user_id=assessment.user_id,
             ts=assessment.ts,
             source=assessment.source,
             failure_probability=pred.failure_probability,
@@ -77,9 +69,7 @@ class AssessmentDetailResponse(AssessmentResponse):
 
 class AssessmentListQuery(BaseModel):
     """Query parameters for listing assessments."""
-    mission_id: Optional[str] = None
     machine_id: Optional[str] = None
-    user_id: Optional[str] = None
     health_status: Optional[str] = None
     risk_level: Optional[str] = None
     date_from: Optional[datetime] = None

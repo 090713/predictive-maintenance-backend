@@ -7,7 +7,6 @@ from fastapi import APIRouter, Depends
 from pymongo import ASCENDING
 
 from backend.config import settings
-from backend.services.auth import get_current_user_response
 from backend.db.mongodb import get_collection, MongoDB
 from backend.model_service import MAIN_MODEL_PATH, ANOMALY_MODEL_PATH, FAILURE_MODE_MODEL_PATH
 
