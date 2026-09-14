@@ -23,22 +23,36 @@ class MongoDB:
         if cls.client is not None:
             return
 
-        cls.client = AsyncIOMotorClient(
+        client = AsyncIOMotorClient(
             settings.MONGODB_URI,
             maxPoolSize=50,
             minPoolSize=10,
             maxIdleTimeMS=30000,
             waitQueueTimeoutMS=5000,
-            serverSelectionTimeoutMS=10000,
+            serverSelectionTimeoutMS=5000,
         )
-        cls.database = cls.client[settings.MONGODB_DATABASE]
+        try:
+            database = client[settings.MONGODB_DATABASE]
 
-        # Verify connection
-        await cls.client.admin.command("ping")
-        print(f"Connected to MongoDB: {settings.MONGODB_DATABASE}")
+            # Verify connection
+            await client.admin.command("ping")
 
-        # Create indexes
-        await cls.create_indexes()
+            cls.client = client
+            cls.database = database
+
+            print(f"Connected to MongoDB: {settings.MONGODB_DATABASE}")
+
+            # Create indexes
+            await cls.create_indexes()
+        except Exception:
+            # Do not leave a half-initialized client behind: if the
+            # connection check fails, resources are freed and future
+            # get_collection()/get_database() calls fail fast and clear,
+            # instead of hanging on server selection.
+            client.close()
+            cls.client = None
+            cls.database = None
+            raise
 
     @classmethod
     async def close(cls) -> None:
