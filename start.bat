@@ -27,11 +27,12 @@ REM Check .env
 if not exist ".env" (
     echo Warning: .env not found, copying from .env.example
     copy .env.example .env
-    echo Please edit .env with your MongoDB URI and JWT secret
+    echo Please edit .env with your MongoDB URI
     exit /b 1
 )
 
 REM Run
-echo Starting server on http://localhost:8000
-echo API docs: http://localhost:8000/docs
-uvicorn backend.main:app --reload --port 8000
+set PORT=%PORT:8000%
+echo Starting server on http://localhost:%PORT%
+echo API docs: http://localhost:%PORT%/docs
+uvicorn backend.main:app --reload --port %PORT%

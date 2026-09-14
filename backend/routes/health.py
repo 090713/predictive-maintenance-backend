@@ -1,22 +1,30 @@
 """
-Health check and system info routes.
+Health check and system information routes.
 """
+
 from datetime import datetime, timezone
-from typing import Optional
-from fastapi import APIRouter, Depends
-from pymongo import ASCENDING
+
+from fastapi import APIRouter
 
 from backend.config import settings
-from backend.db.mongodb import get_collection, MongoDB
-from backend.model_service import MAIN_MODEL_PATH, ANOMALY_MODEL_PATH, FAILURE_MODE_MODEL_PATH
+from backend.db.mongodb import MongoDB
+from backend.model_service import (
+    MAIN_MODEL_PATH,
+    ANOMALY_MODEL_PATH,
+    FAILURE_MODE_MODEL_PATH,
+)
 
 
-router = APIRouter(prefix="/api/v1", tags=["Health"])
+router = APIRouter(
+    prefix="/api/v1",
+    tags=["Health"],
+)
 
 
 @router.get("/health")
 async def health_check():
-    """Basic health check."""
+    """Basic health check for the API."""
+
     return {
         "status": "healthy",
         "message": "Predictive Maintenance backend is running",
@@ -27,51 +35,69 @@ async def health_check():
 
 @router.get("/health/detailed")
 async def detailed_health_check():
-    """Detailed health check including database and models."""
+    """
+    Detailed health check for database and ML model availability.
+
+    Internal exception details and server filesystem paths are deliberately
+    not returned to the client.
+    """
+
     checks = {}
 
+    # ---------------------------------------------------------
     # Database check
+    # ---------------------------------------------------------
     try:
         await MongoDB.client.admin.command("ping")
-        checks["database"] = {"status": "healthy", "message": "Connected to MongoDB"}
-    except Exception as e:
-        checks["database"] = {"status": "unhealthy", "message": str(e)}
 
-    # Models check
+        checks["database"] = {
+            "status": "healthy",
+            "message": "Connected to MongoDB",
+        }
+
+    except Exception:
+        # Do not expose the raw database exception to the public API.
+        checks["database"] = {
+            "status": "unhealthy",
+            "message": "Database connection unavailable",
+        }
+
+    # ---------------------------------------------------------
+    # ML model check
+    # ---------------------------------------------------------
     try:
-        models_exist = all([
-            MAIN_MODEL_PATH.exists(),
-            ANOMALY_MODEL_PATH.exists(),
-            FAILURE_MODE_MODEL_PATH.exists(),
-        ])
+        models_exist = all(
+            [
+                MAIN_MODEL_PATH.exists(),
+                ANOMALY_MODEL_PATH.exists(),
+                FAILURE_MODE_MODEL_PATH.exists(),
+            ]
+        )
+
         checks["models"] = {
             "status": "healthy" if models_exist else "unhealthy",
-            "message": "Models loaded" if models_exist else "Model files missing",
-            "paths": {
-                "main": str(MAIN_MODEL_PATH),
-                "anomaly": str(ANOMALY_MODEL_PATH),
-                "failure_mode": str(FAILURE_MODE_MODEL_PATH),
-            }
+            "message": (
+                "Models loaded"
+                if models_exist
+                else "One or more model files are missing"
+            ),
         }
-    except Exception as e:
-        checks["models"] = {"status": "unhealthy", "message": str(e)}
 
-    # Gradio fallback check
-    try:
-        import httpx
-        async with httpx.AsyncClient(timeout=5.0) as client:
-            resp = await client.get(f"{settings.GRADIO_API_URL}/health", timeout=5.0)
-            checks["gradio_fallback"] = {
-                "status": "healthy" if resp.status_code == 200 else "degraded",
-                "message": f"Gradio API responded with {resp.status_code}",
-            }
     except Exception:
-        checks["gradio_fallback"] = {
-            "status": "unavailable",
-            "message": "Gradio fallback unreachable",
+        # Do not expose filesystem or internal model-loading details.
+        checks["models"] = {
+            "status": "unhealthy",
+            "message": "Unable to verify model availability",
         }
 
-    overall_status = "healthy" if all(c["status"] == "healthy" for c in checks.values()) else "degraded"
+    overall_status = (
+        "healthy"
+        if all(
+            check["status"] == "healthy"
+            for check in checks.values()
+        )
+        else "degraded"
+    )
 
     return {
         "status": overall_status,
@@ -83,11 +109,12 @@ async def detailed_health_check():
 
 @router.get("/version")
 async def version_info():
-    """Get version and model info."""
+    """Return public application and API version information."""
+
     return {
         "app_name": settings.APP_NAME,
         "app_version": settings.APP_VERSION,
         "environment": settings.ENVIRONMENT,
-        "model_version": "1.0.0",  # Would come from model metadata
+        "model_version": "1.0.0",
         "api_version": "v1",
     }
