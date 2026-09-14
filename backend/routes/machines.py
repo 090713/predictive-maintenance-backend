@@ -8,6 +8,7 @@ from pymongo import DESCENDING
 from bson import ObjectId
 
 from backend.models.machine import MachineCreate, MachineUpdate, MachineResponse, MachineListResponse
+from backend.models.assessment import AssessmentResponse
 from backend.db.mongodb import get_collection
 
 

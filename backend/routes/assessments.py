@@ -9,7 +9,7 @@ from bson import ObjectId
 from backend.config import settings
 from backend.models.assessment import (
     AssessmentCreate, AssessmentResponse, AssessmentDetailResponse,
-    AssessmentListQuery, AssessmentListResponse,
+    AssessmentInDB, AssessmentListQuery, AssessmentListResponse,
 )
 from backend.schemas import MachineInput, PredictionResponse
 from backend.model_service import predict_machine
@@ -187,7 +187,7 @@ async def list_assessments(query: AssessmentListQuery = Depends()):
     items = []
     async for doc in cursor:
         doc["_id"] = str(doc["_id"])
-        items.append(AssessmentResponse.from_db(doc))
+        items.append(AssessmentResponse.from_db(AssessmentInDB(**doc)))
 
     return AssessmentListResponse(
         items=items,
