@@ -9,6 +9,10 @@ from fastapi import APIRouter, HTTPException, status, Query
 from pymongo import DESCENDING
 from starlette.concurrency import run_in_threadpool
 
+<<<<<<< HEAD
+from backend.models.machine import MachineCreate, MachineUpdate, MachineResponse, MachineListResponse
+from backend.models.assessment import AssessmentResponse
+=======
 from backend.models.machine import (
     MachineCreate,
     MachineUpdate,
@@ -20,6 +24,7 @@ from backend.models.assessment import (
     AssessmentInDB,
     AssessmentResponse,
 )
+>>>>>>> 30616ffd3ce24b5600b236eb38a1ebbaba190fad
 from backend.db.mongodb import get_collection
 
 
