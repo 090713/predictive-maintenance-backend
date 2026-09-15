@@ -162,6 +162,30 @@ class ContributingFeature(BaseModel):
     method: str = "leave_one_out_replacement_with_training_baseline"
 
 
+class RecommendationOption(BaseModel):
+    """
+    One selectable maintenance recommendation option.
+
+    Produced by the LLM (source="llm") or by deterministic
+    rules (source="deterministic").
+    """
+
+    # Short unique id (slug) used for the operator's decision
+    id: str
+
+    # Short action label shown in the UI
+    label: str
+
+    # One-sentence explanation of the action
+    description: str
+
+    # Effort required: low, medium or high
+    effort: Literal["low", "medium", "high"]
+
+    # Where the option came from (optional for compatibility)
+    source: Optional[Literal["llm", "deterministic"]] = None
+
+
 # ---------------------------------------------------------
 # OUTPUT SCHEMA
 # ---------------------------------------------------------
@@ -260,3 +284,45 @@ class PredictionResponse(BaseModel):
 
     # Decision-support disclaimer
     decision_support_notice: str
+
+    # -------------------------------------------------------
+    # OPTIONAL LLM FIELDS (frontend integration contract)
+    # -------------------------------------------------------
+
+    # LLM-backed recommendation options. Present only when the
+    # OpenRouter client returned usable options; otherwise the
+    # deterministic maintenance_recommendation above is used.
+    recommendationOptions: Optional[List[RecommendationOption]] = None
+
+    # Id of the best recommendation option returned by the LLM
+    selectedRecommendationId: Optional[str] = None
+
+
+# ---------------------------------------------------------
+# RECOMMENDATION DECISION SCHEMAS
+# ---------------------------------------------------------
+# Body and response for POST
+# /api/v1/assessments/{assessment_id}/recommendation-decision
+# ---------------------------------------------------------
+
+class RecommendationDecisionRequest(BaseModel):
+    """Body sent by the frontend when the operator selects a recommendation."""
+
+    # Id of the recommendation option chosen by the operator
+    selectedOptionId: str
+
+    # Assessment the decision belongs to
+    assessmentId: str
+
+
+class RecommendationDecisionResponse(BaseModel):
+    """Response confirming the persisted operator decision."""
+
+    # Assessment the decision belongs to
+    assessmentId: str
+
+    # Id of the recommendation option chosen by the operator
+    selectedOptionId: str
+
+    # ISO timestamp of when the decision was persisted
+    updatedAt: str

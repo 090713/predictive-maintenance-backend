@@ -40,6 +40,8 @@ from backend.decision_service import (
     get_maintenance_action
 )
 
+from backend.services.llm_client import get_llm_recommendations
+
 from src.condition_engine import condition_evidence
 
 
@@ -476,6 +478,33 @@ def predict_machine(
 
 
     # =====================================================
+    # 6b. LLM RECOMMENDATION OPTIONS (OpenRouter, optional)
+    # =====================================================
+
+    # The LLM client never raises: on missing API key, timeout,
+    # HTTP error or parse failure it returns None and the
+    # deterministic recommendation above remains the fallback.
+    # The LLM_TIMEOUT_SECONDS setting bounds the latency impact.
+    llm_recommendations = get_llm_recommendations(
+        product_type=product_type,
+        readings={
+            "air_temperature": air_temperature,
+            "process_temperature": process_temperature,
+            "rotational_speed": rotational_speed,
+            "torque": torque,
+            "tool_wear": tool_wear,
+        },
+        failure_probability=failure_probability,
+        failure_mode_code=(
+            maintenance_info["failure_mode"]
+        ),
+        failure_mode_name=(
+            maintenance_info["failure_mode_name"]
+        ),
+    )
+
+
+    # =====================================================
     # 7. FEATURE CONTRIBUTIONS (leave-one-out on the model)
     # =====================================================
 
@@ -502,7 +531,7 @@ def predict_machine(
     # 9. COMBINE EVERYTHING
     # =====================================================
 
-    return {
+    result = {
         # Overall prediction
         "failure_probability": failure_probability,
         "predicted_failure": predicted_failure,
@@ -566,6 +595,19 @@ def predict_machine(
 
         "decision_support_notice": DECISION_SUPPORT_NOTICE,
     }
+
+    # Optional LLM-backed recommendation options: attached only
+    # when the LLM client returned usable options.
+    if llm_recommendations:
+        result["recommendationOptions"] = (
+            llm_recommendations["recommendationOptions"]
+        )
+
+        result["selectedRecommendationId"] = (
+            llm_recommendations["selectedRecommendationId"]
+        )
+
+    return result
 
 
 # =========================================================
