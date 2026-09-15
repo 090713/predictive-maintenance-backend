@@ -13,17 +13,12 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from starlette.concurrency import run_in_threadpool
 
 from backend.models.assessment import (
-<<<<<<< HEAD
-    AssessmentCreate, AssessmentResponse, AssessmentDetailResponse,
-    AssessmentInDB, AssessmentListQuery, AssessmentListResponse,
-=======
     AssessmentCreate,
     AssessmentInDB,
     AssessmentResponse,
     AssessmentDetailResponse,
     AssessmentListQuery,
     AssessmentListResponse,
->>>>>>> 30616ffd3ce24b5600b236eb38a1ebbaba190fad
 )
 from backend.schemas import MachineInput, PredictionResponse
 from backend.model_service import predict_machine
@@ -128,17 +123,12 @@ async def list_assessments(
     async for doc in cursor:
         # Convert MongoDB ObjectId to string.
         doc["_id"] = str(doc["_id"])
-<<<<<<< HEAD
-        items.append(AssessmentResponse.from_db(AssessmentInDB(**doc)))
-=======
-
-        # from_db() expects an AssessmentInDB object, not a raw dict.
+# from_db() expects an AssessmentInDB object, not a raw dict.
         assessment = AssessmentInDB(**doc)
 
         items.append(
             AssessmentResponse.from_db(assessment)
         )
->>>>>>> 30616ffd3ce24b5600b236eb38a1ebbaba190fad
 
     return AssessmentListResponse(
         items=items,

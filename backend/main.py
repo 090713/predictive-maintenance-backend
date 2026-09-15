@@ -31,10 +31,21 @@ from backend.model_service import predict_machine
 async def lifespan(app: FastAPI):
     """Application lifespan manager."""
     # Startup
-    await MongoDB.connect()
-    yield
-    # Shutdown
-    await MongoDB.close()
+    # A database outage must NOT take the whole API down. If MongoDB is
+    # unreachable (wrong/missing MONGODB_URI env, cluster down, restart),
+    # log the failure and boot in a degraded state so the app can still
+    # answer health checks and surface the exact DB error instead of
+    # crashing at startup (which manifests as a Railway 502 for all routes).
+    try:
+        await MongoDB.connect()
+    except Exception as exc:  # noqa: BLE001 - boot must survive any DB error
+        print(f"WARNING: MongoDB connection failed at startup: {exc!r}")
+        print("Degraded mode: /health and /health/detailed will report DB status")
+    try:
+        yield
+    finally:
+        # Shutdown
+        await MongoDB.close()
 
 
 # =========================================================
